@@ -3,6 +3,8 @@ Two-way Flowdock <-> IRC gateway
 
 Two-way gateway between Flowdock flows and IRC channels. One-to-many mappings are also possible. Messages are loaded using Flowdock Streaming API and send using REST API.
 
+Currently chat messages, influx comments and status changes are supported.
+
 Requirements
 ------------
 

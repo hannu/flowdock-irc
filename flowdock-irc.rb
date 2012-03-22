@@ -146,9 +146,9 @@ class FlowdockIRC
     []
   end
 
-  def send_to_irc(channel, nick, message)
+  def send_to_irc(channel, message)
     # Split possible password out from channel name
-    @bot.msg(channel.split(' ').first, "<#{nick}> #{message}")
+    @bot.msg(channel.split(' ').first, message)
   end
 
   def sent_from_channel?(nick, channel, message)
@@ -157,6 +157,13 @@ class FlowdockIRC
     false
   end
 
+    # We want only messages and not the ones sent from current channel itself
+    return if sent_from_channel?(data['external_user_name'], channel, data['content'])
+  end
+  def handle_status(nick, channel, data)
+    send_to_irc(channel, "#{nick} changed status to: #{data['content']}")
+  def handle_comment(nick, channel, data)
+    send_to_irc(channel, "#{nick} commented '#{data['content']['title']}': #{data['content']['text']}")
   def flowdock_stream
     http = EM::HttpRequest.new("https://stream.flowdock.com/flows/?filter=#{FLOW_TO_IRC.keys.join(',')}").get(
       :head => {'Authorization' => [PERSONAL_TOKEN, ''], 'Accept' => 'text/json'}, 
@@ -171,12 +178,12 @@ class FlowdockIRC
       buffer << chunk
       while line = buffer.slice!(/.+\r\n/)
         data = JSON.parse(line)
-        # We want only messages and not the ones sent from current channel itself
         if data['event'] == "message"
-          puts data.inspect
+        #puts data.inspect
+        if ["message", "status", "comment"].include?(data['event'])
+          nick = id_to_nick(data['flow'], data['user'])
           irc_targets_for(data['flow']).each do |channel|
-            next if sent_from_channel?(data['external_user_name'], channel, data['content'])
-            send_to_irc(channel, id_to_nick(data['flow'], data['user']), data['content'])
+            self.send("handle_#{data['event']}", nick, channel, data)
           end
         end
       end
