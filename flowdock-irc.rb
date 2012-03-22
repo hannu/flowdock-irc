@@ -65,7 +65,7 @@ class FlowdockIRC
       on :channel, // do
         # We want to store few latest message sent to flowdock
         # so those are not rendered in IRC again
-        @gateway.latest_messages << "#{nick}: #{message}"
+        @gateway.latest_messages << "#{nick}@#{channel}: #{message}"
         while @gateway.latest_messages.size > 10 do
           @gateway.latest_messages.pop(0)
         end
@@ -137,7 +137,7 @@ class FlowdockIRC
 
   def irc_targets_for(flow)
     flow = flow.gsub(':', '/')
-    return FLOW_TO_IRC[flow].to_a if FLOW_TO_IRC[flow]
+    return FLOW_TO_IRC[flow].to_a.map{|c| c.split(' ').first} if FLOW_TO_IRC[flow]
     []
   end
 
@@ -146,8 +146,7 @@ class FlowdockIRC
     @bot.msg(channel.split(' ').first, "<#{nick}> #{message}")
   end
 
-  def sent_from_irc?(data)
-    latest = @latest_messages.index{|n| "#{data['external_user_name']}: #{data['content']}"}
+    latest = @latest_messages.index{|n| "#{nick}@#{channel}: #{message}"}
     @latest_messages.delete_at(latest) and return true if latest
     false
   end
@@ -166,10 +165,11 @@ class FlowdockIRC
       buffer << chunk
       while line = buffer.slice!(/.+\r\n/)
         data = JSON.parse(line)
-        # We want only messages and not the ones sent from IRC itself
-        if data['event'] == "message" and !sent_from_irc?(data)
+        # We want only messages and not the ones sent from current channel itself
+        if data['event'] == "message"
           puts data.inspect
           irc_targets_for(data['flow']).each do |channel|
+            next if sent_from_channel?(data['external_user_name'], channel, data['content'])
             send_to_irc(channel, id_to_nick(data['flow'], data['user']), data['content'])
           end
         end
