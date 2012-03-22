@@ -7,42 +7,28 @@ require 'net/https'
 require 'json'
 require 'isaac/bot'
 
+PERSONAL_TOKEN = ""
+FLOW = "api-test"
+ORGANIZATION = "hannu"
+IRC_NICK = "flowbotti#{rand(100).to_s}"
+IRC_SERVER = "irc.stealth.net"
+IRC_CHANNEL = "#fdtest" #channel [password]
+IRC_REALNAME = "Flowdock IRC Bot"
+
+class FlowDockBot < Isaac::Bot
+  attr_accessor :gateway
+end
+
 class FlowdockIRC
-  # Personal API token to get flow info and for Streaming API
-  PERSONAL_TOKEN = ""
-  # Flow name and Flow API token for Push API
-  FLOW = "flow"
-  FLOW_TOKEN = ""
-
-  ORGANIZATION = "organization"
-  IRC_NICK = "flowbotti#{rand(100).to_s}"
-  IRC_SERVER = "irc.stealth.net"
-  IRC_CHANNEL = "#fdtest" #channel [password]
-  IRC_REALNAME = "Flowdock IRC Bot"
-
-  attr_accessor :bot, :flow
+  # Personal API token to get flow info and for API access
+  # Get it from https://www.flowdock.com/account/tokens
+  attr_accessor :bot, :flow, :latest_messages
 
   def initialize
     puts "Starting Flowdock IRC Bot"
+    @latest_messages = []
     init_bot
     load_flow_info
-  end
-
-  class FlowDockBot < Isaac::Bot
-    def send_to_flowdock(nick, message)
-      uri = URI("https://api.flowdock.com/v1/messages/chat/#{FLOW_TOKEN}")
-      http = Net::HTTP.new(uri.host, 443)
-      http.verify_mode = OpenSSL::SSL::VERIFY_NONE
-      http.use_ssl = true
-      req = Net::HTTP::Post.new(uri.request_uri, initheader = {'Content-Type' =>'application/json'})
-      req.body = {
-        "content" => message,
-        "external_user_name" => nick
-      }.to_json
-      http.start() do |http|
-        res = http.request(req)
-      end
-    end
   end
 
   def init_bot
@@ -58,14 +44,21 @@ class FlowdockIRC
         join IRC_CHANNEL
       end
       on :channel, // do
-        #puts nick, message
-        send_to_flowdock(nick, message)
+        # We want to store few latest message sent to flowdock
+        # so those are not rendered in IRC again
+        @gateway.latest_messages << "#{nick}: #{message}"
+        while @gateway.latest_messages.size > 10 do
+          @gateway.latest_messages.pop(0)
+        end
+        # Send message to flow
+        @gateway.send_to_flowdock(nick, message)
       end
       on :error do
         # TODO: Error handling
         puts "An IRC bot error occurred"
       end
     end
+    @bot.gateway = self
   end
 
   def id_to_nick(id)
@@ -76,6 +69,24 @@ class FlowdockIRC
   def send_to_irc(nick, message)
     # Split possible password out from channel name
     @bot.msg(IRC_CHANNEL.split(' ').first, "<#{nick}> #{message}")
+  end
+
+  def send_to_flowdock(nick, message)
+    uri = URI("https://api.flowdock.com/flows/#{ORGANIZATION}/#{FLOW}/messages")
+    http = Net::HTTP.new(uri.host, 443)
+    http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+    http.use_ssl = true
+    req = Net::HTTP::Post.new(uri.request_uri, initheader = {'Content-Type' =>'application/json'})
+    req.basic_auth PERSONAL_TOKEN, ''
+    req.body = {
+      "event" => "message",
+      "content" => message,
+      "external_user_name" => nick
+    }.to_json
+    http.start() do |http|
+      res = http.request(req)
+      puts res.body
+    end
   end
 
   def load_flow_info
@@ -105,8 +116,15 @@ class FlowdockIRC
       buffer << chunk
       while line = buffer.slice!(/.+\r\n/)
         data = JSON.parse(line)
-        #puts data.inspect
-        send_to_irc(id_to_nick(data['user']), data['content']) if data['event'] == "message" and data['user'] != "0"
+        # We want only messages and not the ones sent from IRC itself
+        if data['event'] == "message" 
+          latest = @latest_messages.index{|n| "#{data['external_user_name']}: #{data['content']}"}
+          if latest
+            @latest_messages.delete_at(latest)
+          else
+            send_to_irc(id_to_nick(data['user']), data['content'])
+          end
+        end
       end
     end
   end
