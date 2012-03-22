@@ -157,11 +157,15 @@ class FlowdockIRC
     false
   end
 
+  def handle_message(nick, channel, data)
     # We want only messages and not the ones sent from current channel itself
     return if sent_from_channel?(data['external_user_name'], channel, data['content'])
+    send_to_irc(channel, "#{nick}: #{data['content']}")
   end
+
   def handle_status(nick, channel, data)
     send_to_irc(channel, "#{nick} changed status to: #{data['content']}")
+  end
   def handle_comment(nick, channel, data)
     send_to_irc(channel, "#{nick} commented '#{data['content']['title']}': #{data['content']['text']}")
   def flowdock_stream
@@ -178,7 +182,6 @@ class FlowdockIRC
       buffer << chunk
       while line = buffer.slice!(/.+\r\n/)
         data = JSON.parse(line)
-        if data['event'] == "message"
         #puts data.inspect
         if ["message", "status", "comment"].include?(data['event'])
           nick = id_to_nick(data['flow'], data['user'])
