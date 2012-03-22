@@ -146,6 +146,7 @@ class FlowdockIRC
     @bot.msg(channel.split(' ').first, "<#{nick}> #{message}")
   end
 
+  def sent_from_channel?(nick, channel, message)
     latest = @latest_messages.index{|n| "#{nick}@#{channel}: #{message}"}
     @latest_messages.delete_at(latest) and return true if latest
     false
