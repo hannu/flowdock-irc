@@ -8,11 +8,11 @@ require 'json'
 require 'isaac/bot'
 
 PERSONAL_TOKEN = ""
-FLOW = "api-test"
-ORGANIZATION = "hannu"
+FLOW = "your-flow"
+ORGANIZATION = "your-organization"
 IRC_NICK = "flowbotti#{rand(100).to_s}"
 IRC_SERVER = "irc.stealth.net"
-IRC_CHANNEL = "#fdtest" #channel [password]
+IRC_CHANNEL = "#flowdock-bot" #channel [password]
 IRC_REALNAME = "Flowdock IRC Bot"
 
 class FlowDockBot < Isaac::Bot
