@@ -56,6 +56,7 @@ class FlowdockIRC
       end
       on :connect do
         puts "Connected to #{IRC_SERVER}"
+        puts "I'm #{IRC_NICK}"
         puts "Joining to channels..."
         @gateway.all_channels.each do |channel|
           puts "- #{channel}"
