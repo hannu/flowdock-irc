@@ -105,6 +105,12 @@ class FlowdockIRC
     end
   end
 
+  def sent_from_irc?(data)
+    latest = @latest_messages.index{|n| "#{data['external_user_name']}: #{data['content']}"}
+    @latest_messages.delete_at(latest) and return true if latest
+    false
+  end
+
   def flowdock_stream
     http = EM::HttpRequest.new("https://stream.flowdock.com/flows/#{ORGANIZATION}/#{FLOW}").get(
       :head => {'Authorization' => [PERSONAL_TOKEN, ''], 'Accept' => 'text/json'}, 
@@ -119,13 +125,8 @@ class FlowdockIRC
       while line = buffer.slice!(/.+\r\n/)
         data = JSON.parse(line)
         # We want only messages and not the ones sent from IRC itself
-        if data['event'] == "message" 
-          latest = @latest_messages.index{|n| "#{data['external_user_name']}: #{data['content']}"}
-          if latest
-            @latest_messages.delete_at(latest)
-          else
-            send_to_irc(id_to_nick(data['user']), data['content'])
-          end
+        if data['event'] == "message" and !sent_from_irc?(data)
+          send_to_irc(id_to_nick(data['user']), data['content'])
         end
       end
     end
