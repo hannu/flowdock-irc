@@ -30,7 +30,7 @@ One flow could be mapped to multiple channel as well as one channel to multiple 
 
 <pre>
 FLOW_TO_IRC = {
-  "organization/flow2" => ["#chan2"]
+  "organization/flow2" => ["#chan2"],
   "organization/flow" => ["#chan1", "#chan2", "nick"]
 }
 IRC_TO_FLOW = {
@@ -42,6 +42,6 @@ Password protected IRC channels
 
 <pre>
 FLOW_TO_IRC = {
-  "organization/flow" => ["#secret password"]
+  "organization/flow" => "#secret password"
 }
 </pre>
