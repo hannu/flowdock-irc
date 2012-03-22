@@ -166,8 +166,11 @@ class FlowdockIRC
   def handle_status(nick, channel, data)
     send_to_irc(channel, "#{nick} changed status to: #{data['content']}")
   end
+
   def handle_comment(nick, channel, data)
     send_to_irc(channel, "#{nick} commented '#{data['content']['title']}': #{data['content']['text']}")
+  end
+
   def flowdock_stream
     http = EM::HttpRequest.new("https://stream.flowdock.com/flows/?filter=#{FLOW_TO_IRC.keys.join(',')}").get(
       :head => {'Authorization' => [PERSONAL_TOKEN, ''], 'Accept' => 'text/json'}, 
