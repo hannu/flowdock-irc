@@ -15,7 +15,7 @@ gem install em-http
 Route configuration examples
 ----------------------
 
-Map single flow to single channel use in both ways
+Map single flow to single channel in both directions
 
 ```ruby
 FLOW_TO_IRC = {
