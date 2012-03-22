@@ -83,7 +83,10 @@ class FlowdockIRC
   end
 
   def all_channels
-    (FLOW_TO_IRC.values + IRC_TO_FLOW.keys).flatten.uniq
+    (FLOW_TO_IRC.values + IRC_TO_FLOW.keys).flatten.uniq.select do |channel|
+      # Filter out nicks
+      ['#','!','&'].include?(channel[0,1])
+    end
   end
 
   def id_to_nick(flow, id)
