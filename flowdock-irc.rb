@@ -84,10 +84,14 @@ class FlowdockIRC
   end
 
   def all_channels
-    (FLOW_TO_IRC.values + IRC_TO_FLOW.keys).flatten.uniq.select do |channel|
-      # Filter out nicks
-      ['#','!','&'].include?(channel[0,1])
+    channels = (FLOW_TO_IRC.values + IRC_TO_FLOW.keys).flatten.uniq
+    # Filter out nicks
+    channels = channels.select{|c| ['#','!','&'].include?(c[0,1])}
+    # Remove channels from list that are already there with password
+    channels.select{|c| c.split(' ').size > 1}.each do |c|
+      channels.delete(c.split(' ').first)
     end
+    channels
   end
 
   def id_to_nick(flow, id)
