@@ -84,7 +84,10 @@ class FlowdockIRC
     }.to_json
     http.start() do |http|
       res = http.request(req)
-      puts res.body
+      if res.code != '200'
+        puts "ERROR: Could not send message to Flowdock"
+        puts res.body
+      end
     end
   end
 
