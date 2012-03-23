@@ -171,6 +171,11 @@ class FlowdockIRC
     send_to_irc(channel, "#{nick} commented '#{data['content']['title']}': #{data['content']['text']}")
   end
 
+  def handle_user_edit(nick, channel, data)
+    return if nick == data['content']['user']['nick']
+    send_to_irc(channel, "#{nick} is now known as #{data['content']['user']['nick']}")
+  end
+
   def flowdock_stream
     http = EM::HttpRequest.new("https://stream.flowdock.com/flows/?filter=#{FLOW_TO_IRC.keys.join(',')}").get(
       :head => {'Authorization' => [PERSONAL_TOKEN, ''], 'Accept' => 'text/json'}, 
@@ -185,11 +190,12 @@ class FlowdockIRC
       buffer << chunk
       while line = buffer.slice!(/.+\r\n/)
         data = JSON.parse(line)
-        #puts data.inspect
-        if ["message", "status", "comment"].include?(data['event'])
+        puts data.inspect
+        if ["message", "status", "comment", "user-edit"].include?(data['event'])
           nick = id_to_nick(data['flow'], data['user'])
+          event_method = data['event'].gsub('-','_')
           irc_targets_for(data['flow']).each do |channel|
-            self.send("handle_#{data['event']}", nick, channel, data)
+            self.send("handle_#{event_method}", nick, channel, data)
           end
         end
       end
