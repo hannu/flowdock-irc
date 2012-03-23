@@ -110,7 +110,7 @@ class FlowdockIRC
       req.basic_auth PERSONAL_TOKEN, ''
       res = http.request(req)
       raise "Could not load flow info. Invalid PERSONAL_TOKEN?" if res.code != '200'
-      @flow = JSON.parse(res.body)
+      return JSON.parse(res.body)
     end
   end
 
@@ -172,7 +172,11 @@ class FlowdockIRC
   end
 
   def handle_user_edit(nick, channel, data)
-    return if nick == data['content']['user']['nick']
+    new_nick = data['content']['user']['nick']
+    return if nick == new_nick
+    # Reload flow info
+    flow = data['flow'].gsub(':','/')
+    @flows[flow] = load_flow_info(flow)
     send_to_irc(channel, "#{nick} is now known as #{data['content']['user']['nick']}")
   end
 
