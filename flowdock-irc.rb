@@ -157,6 +157,17 @@ class FlowdockIRC
     false
   end
 
+  def handle(data)
+    puts data.inspect
+    if ["message", "status", "comment", "user-edit"].include?(data['event'])
+      nick = id_to_nick(data['flow'], data['user'])
+      event_method = data['event'].gsub('-','_')
+      irc_targets_for(data['flow']).each do |channel|
+        self.send("handle_#{event_method}", nick, channel, data)
+      end
+    end
+  end
+
   def handle_message(nick, channel, data)
     # We want only messages and not the ones sent from current channel itself
     return if sent_from_channel?(data['external_user_name'], channel, data['content'])
@@ -193,15 +204,7 @@ class FlowdockIRC
     http.stream do |chunk|
       buffer << chunk
       while line = buffer.slice!(/.+\r\n/)
-        data = JSON.parse(line)
-        puts data.inspect
-        if ["message", "status", "comment", "user-edit"].include?(data['event'])
-          nick = id_to_nick(data['flow'], data['user'])
-          event_method = data['event'].gsub('-','_')
-          irc_targets_for(data['flow']).each do |channel|
-            self.send("handle_#{event_method}", nick, channel, data)
-          end
-        end
+        handle(JSON.parse(line))
       end
     end
   end
