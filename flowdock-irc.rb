@@ -30,20 +30,15 @@ class FlowDockBot < Isaac::Bot
 end
 
 class FlowdockIRC
-  attr_accessor :bot, :flows, :latest_messages
+  attr_accessor :bot, :flows, :latest_messages, :irc_to_flow, :flow_to_irc
 
-  def initialize
-    puts "Starting Flowdock IRC Bot"
+  def initialize(settings = {})
+    @irc_to_flow = settings[:irc_to_flow] || {}
+    @flow_to_irc = settings[:flow_to_irc] || {}
     @latest_messages = []
     # Init IRC bot
     init_bot
-    # Load flow info to get id -> nick mappings
     @flows = {}
-    puts "Loading flow info..."
-    FLOW_TO_IRC.keys.each do |flow|
-      puts "- #{flow}"
-      @flows[flow] = load_flow_info(flow)
-    end
   end
 
   def init_bot
@@ -84,7 +79,7 @@ class FlowdockIRC
   end
 
   def all_channels
-    channels = (FLOW_TO_IRC.values + IRC_TO_FLOW.keys).flatten.uniq
+    channels = (@flow_to_irc.values + @irc_to_flow.keys).flatten.uniq
     # Filter out nicks
     channels = channels.select{|c| ['#','!','&'].include?(c[0,1])}
     # Remove channels from list that are already there with password
@@ -115,7 +110,7 @@ class FlowdockIRC
   end
 
   def flow_targets_for(channel)
-    return IRC_TO_FLOW[channel].to_a if IRC_TO_FLOW[channel]
+    return @irc_to_flow[channel].to_a if @irc_to_flow[channel]
     []
   end
 
@@ -142,7 +137,7 @@ class FlowdockIRC
 
   def irc_targets_for(flow)
     flow = flow.gsub(':', '/')
-    return FLOW_TO_IRC[flow].to_a.map{|c| c.split(' ').first} if FLOW_TO_IRC[flow]
+    return @flow_to_irc[flow].to_a.map{|c| c.split(' ').first} if @flow_to_irc[flow]
     []
   end
 
@@ -192,7 +187,7 @@ class FlowdockIRC
   end
 
   def flowdock_stream
-    http = EM::HttpRequest.new("https://stream.flowdock.com/flows/?filter=#{FLOW_TO_IRC.keys.join(',')}").get(
+    http = EM::HttpRequest.new("https://stream.flowdock.com/flows/?filter=#{@flow_to_irc.keys.join(',')}").get(
       :head => {'Authorization' => [PERSONAL_TOKEN, ''], 'Accept' => 'text/json'}, 
       :keepalive => true, 
       :connect_timeout => 0, 
@@ -214,6 +209,14 @@ class FlowdockIRC
   end
 
   def run
+    puts "Starting Flowdock IRC Bot"
+    # Load flow info to get id -> nick mappings
+    puts "Loading flow info..."
+    @flow_to_irc.keys.each do |flow|
+      puts "- #{flow}"
+      @flows[flow] = load_flow_info(flow)
+    end
+
     Thread.new {bot.start}
     while(true) do 
       EventMachine.run {flowdock_stream}
@@ -221,4 +224,7 @@ class FlowdockIRC
   end
 end
 
-FlowdockIRC.new.run
+FlowdockIRC.new({
+  :irc_to_flow => IRC_TO_FLOW, 
+  :flow_to_irc => FLOW_TO_IRC
+}).run
