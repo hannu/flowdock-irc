@@ -204,7 +204,11 @@ class FlowdockIRC
     http.stream do |chunk|
       buffer << chunk
       while line = buffer.slice!(/.+\r\n/)
-        handle(JSON.parse(line))
+        begin
+          handle(JSON.parse(line))
+        rescue JSON::ParserError => e
+          puts "ERROR: Could not parse JSON, #{e}: #{line}"
+        end
       end
     end
   end
