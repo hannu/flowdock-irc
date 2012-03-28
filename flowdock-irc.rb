@@ -224,7 +224,9 @@ class FlowdockIRC
   end
 end
 
-FlowdockIRC.new({
-  :irc_to_flow => IRC_TO_FLOW, 
-  :flow_to_irc => FLOW_TO_IRC
-}).run
+if !defined?(RSpec)
+  FlowdockIRC.new({
+    :irc_to_flow => IRC_TO_FLOW, 
+    :flow_to_irc => FLOW_TO_IRC
+  }).run
+end
