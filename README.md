@@ -10,10 +10,12 @@ Currently chat messages, influx comments and status changes are supported.
 Requirements
 ------------
 
+json, [eventmachine](https://github.com/eventmachine/eventmachine), [em-http-request](https://github.com/igrigorik/em-http-request), [isaac](https://github.com/vangberg/isaac)
+
+Install with
+
 <pre>
-gem install isaac
-gem install eventmachine
-gem install em-http
+bundle install
 </pre>
 
 Route configuration examples
