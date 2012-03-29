@@ -2,5 +2,6 @@ source "http://rubygems.org"
 
 gem "rake"
 gem "json"
-gem "eventmachine", "~> 0.12"
+gem "eventmachine"
+gem "em-http-request"
 gem "isaac", "~> 0.2.6"
