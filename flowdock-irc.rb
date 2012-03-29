@@ -110,8 +110,8 @@ class FlowdockIRC
   end
 
   def flow_targets_for(channel)
-    return @irc_to_flow[channel].to_a if @irc_to_flow[channel]
-    []
+    return [] unless @irc_to_flow[channel]
+    @irc_to_flow[channel].is_a?(Array) ? @irc_to_flow[channel] : [@irc_to_flow[channel]]
   end
 
   def send_to_flowdock(flow, nick, message)
@@ -136,9 +136,10 @@ class FlowdockIRC
   end
 
   def irc_targets_for(flow)
+    return [] unless @flow_to_irc[flow]
     flow = flow.gsub(':', '/')
-    return @flow_to_irc[flow].to_a.map{|c| c.split(' ').first} if @flow_to_irc[flow]
-    []
+    targets = @flow_to_irc[flow].is_a?(Array) ? @flow_to_irc[flow] : [@flow_to_irc[flow]]
+    targets.map{|c| c.split(' ').first} 
   end
 
   def send_to_irc(channel, message)

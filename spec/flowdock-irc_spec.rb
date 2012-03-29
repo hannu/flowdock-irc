@@ -48,5 +48,13 @@ describe FlowdockIRC do
     it "should strip out password from irc channels" do
       @f.irc_targets_for('org/secret').should eq(['#secret'])
     end
+
+    it "should handle empty flow targets" do
+      @f.irc_targets_for('org/uknown').should eq([])
+    end
+
+    it "should handle empty irc targets" do
+      @f.flow_targets_for('#uknown').should eq([])
+    end
   end
 end
