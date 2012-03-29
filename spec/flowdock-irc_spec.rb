@@ -1,4 +1,4 @@
-require 'flowdock-irc'
+require 'spec_helper'
 
 describe FlowdockIRC do
   describe "#all_channels" do
