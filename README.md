@@ -1,6 +1,8 @@
 Two-way Flowdock <-> IRC gateway
 ================================
 
+[![Build Status](https://secure.travis-ci.org/hannu/flowdock-irc.png?branch=master)](http://travis-ci.org/hannu/flowdock-irc)
+
 Two-way gateway between Flowdock flows and IRC channels. One-to-many mappings are also possible. Messages are loaded using Flowdock Streaming API and send using REST API.
 
 Currently chat messages, influx comments and status changes are supported.
